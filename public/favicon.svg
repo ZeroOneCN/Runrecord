@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="faviconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#07c160;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00d68f;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 背景圆角矩形 -->
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#faviconGradient)"/>
+  
+  <!-- 跑步小人图标 -->
+  <g fill="white">
+    <!-- 头部 -->
+    <circle cx="32" cy="22" r="6"/>
+    
+    <!-- 身体 -->
+    <path d="M32 28 L32 38" stroke="white" stroke-width="4" stroke-linecap="round"/>
+    
+    <!-- 手臂 -->
+    <path d="M26 32 L32 28 L38 32" stroke="white" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+    
+    <!-- 腿 -->
+    <path d="M32 38 L26 48 M32 38 L38 46" stroke="white" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+  </g>
+  
+  <!-- 运动轨迹线条 -->
+  <path d="M18 50 Q24 46 30 48" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M34 50 Q40 46 46 48" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round" fill="none"/>
+</svg>
