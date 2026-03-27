@@ -21,6 +21,7 @@ function initDatabase() {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           user_id TEXT NOT NULL,
           steps INTEGER NOT NULL,
+          hour INTEGER,
           record_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
@@ -28,6 +29,16 @@ function initDatabase() {
         if (err) reject(err);
         else {
           console.log('数据表初始化完成');
+
+          // 添加小时字段（兼容旧数据）
+          db.run(`
+            ALTER TABLE step_records ADD COLUMN hour INTEGER
+          `, (err) => {
+            // 忽略字段已存在的错误
+            if (err && !err.message.includes('duplicate column')) {
+              console.error('添加 hour 字段失败:', err);
+            }
+          });
 
           // 添加用户设置表
           db.run(`

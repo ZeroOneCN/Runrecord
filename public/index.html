@@ -473,9 +473,92 @@
       h1 { font-size: 28px; }
       .modal { padding: 24px; }
       .btn-group { flex-direction: column; }
+      
+      /* 移动端表格优化 */
+      .table-container { overflow-x: auto; }
+      table { min-width: 800px; }
+      
+      /* 移动端小时按钮优化 */
+      .hour-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+      }
+      
+      /* 移动端批量操作优化 */
+      .batch-actions { flex-direction: column; gap: 8px; }
+      
+      /* 移动端月趋势对比优化 */
+      #monthCompare > div { grid-template-columns: 1fr !important; }
+      
+      /* 移动端确认弹窗 */
+      .confirm-modal { padding: 24px; }
+      .confirm-modal-title { font-size: 16px; }
+      .confirm-modal-message { font-size: 13px; }
     }
-    
-    /* 时间点快速选择 */
+
+    /* 确认弹窗 */
+    .confirm-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .confirm-modal-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    .confirm-modal {
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(20px);
+      border-radius: var(--radius-xl);
+      padding: 32px;
+      width: 90%;
+      max-width: 420px;
+      box-shadow: var(--shadow-float);
+      transform: scale(0.9) translateY(-20px);
+      transition: all 0.3s ease;
+    }
+    .confirm-modal-overlay.show .confirm-modal {
+      transform: scale(1) translateY(0);
+    }
+    .confirm-modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .confirm-modal-message {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin-bottom: 24px;
+      background: rgba(0, 0, 0, 0.03);
+      padding: 16px;
+      border-radius: var(--radius);
+      white-space: pre-line;
+    }
+    .confirm-modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    .confirm-modal-actions .btn { min-width: 100px; }
+
+    /* Toast 通知 */
     .time-points {
       display: flex;
       align-items: center;
@@ -487,7 +570,42 @@
       min-width: 60px;
     }
 
-    /* Toast 通知 */
+    /* 时间段按钮 */
+    .hour-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+    .hour-btn {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-color);
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hour-btn:hover {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+      background: var(--primary-light);
+      transform: translateY(-2px);
+    }
+    .hour-btn.active {
+      background: var(--primary-gradient);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(7, 193, 96, 0.3);
+    }
+
+    @media (max-width: 768px) {
     .toast {
       position: fixed;
       top: 24px;
@@ -551,16 +669,44 @@
           <input type="number" id="steps" placeholder="输入步数">
         </div>
         <div class="form-group">
+          <label>时间段</label>
+          <div class="hour-buttons">
+            <button class="hour-btn" data-hour="7" onclick="selectHour(7)">7</button>
+            <button class="hour-btn" data-hour="8" onclick="selectHour(8)">8</button>
+            <button class="hour-btn" data-hour="9" onclick="selectHour(9)">9</button>
+            <button class="hour-btn" data-hour="10" onclick="selectHour(10)">10</button>
+            <button class="hour-btn" data-hour="11" onclick="selectHour(11)">11</button>
+            <button class="hour-btn" data-hour="12" onclick="selectHour(12)">12</button>
+            <button class="hour-btn" data-hour="13" onclick="selectHour(13)">13</button>
+            <button class="hour-btn" data-hour="14" onclick="selectHour(14)">14</button>
+            <button class="hour-btn" data-hour="15" onclick="selectHour(15)">15</button>
+            <button class="hour-btn" data-hour="16" onclick="selectHour(16)">16</button>
+            <button class="hour-btn" data-hour="17" onclick="selectHour(17)">17</button>
+            <button class="hour-btn" data-hour="18" onclick="selectHour(18)">18</button>
+            <button class="hour-btn" data-hour="19" onclick="selectHour(19)">19</button>
+            <button class="hour-btn" data-hour="20" onclick="selectHour(20)">20</button>
+            <button class="hour-btn" data-hour="21" onclick="selectHour(21)">21</button>
+            <button class="hour-btn" data-hour="22" onclick="selectHour(22)">22</button>
+            <button class="hour-btn" data-hour="23" onclick="selectHour(23)">23</button>
+            <button class="hour-btn active" data-hour="" onclick="selectHour('')">全</button>
+          </div>
+          <input type="hidden" id="hourSelect" value="">
+        </div>
+      </div>
+      <div class="filter-row">
+        <div class="form-group">
           <label>记录时间</label>
           <input type="datetime-local" id="recordTime">
         </div>
       </div>
       <div class="time-points">
         <span style="color: var(--text-secondary); font-size: 14px; margin-right: 12px;">快速选择时间点：</span>
+        <button class="btn btn-sm" onclick="setTimePoint(7)">7:00</button>
+        <button class="btn btn-sm" onclick="setTimePoint(8)">8:00</button>
         <button class="btn btn-sm" onclick="setTimePoint(9)">9:00</button>
         <button class="btn btn-sm" onclick="setTimePoint(12)">12:00</button>
         <button class="btn btn-sm" onclick="setTimePoint(18)">18:00</button>
-        <button class="btn btn-sm" onclick="setTimePoint(24)">24:00</button>
+        <button class="btn btn-sm" onclick="setTimePoint(23)">23:00</button>
       </div>
       <button class="btn" onclick="addStepRecord()" style="margin-top: 16px;">添加记录</button>
     </div>
@@ -598,7 +744,49 @@
       </div>
 
       <div id="chartContainer" style="margin-bottom: 24px; background: rgba(255,255,255,0.6); border-radius: var(--radius-lg); padding: 20px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+          <span style="color: var(--text-secondary); font-size: 14px;">时间段筛选：</span>
+          <button class="hour-btn active" data-hour="" onclick="selectChartHour('')">全部</button>
+          <button class="hour-btn" data-hour="7" onclick="selectChartHour(7)">7</button>
+          <button class="hour-btn" data-hour="8" onclick="selectChartHour(8)">8</button>
+          <button class="hour-btn" data-hour="9" onclick="selectChartHour(9)">9</button>
+          <button class="hour-btn" data-hour="10" onclick="selectChartHour(10)">10</button>
+          <button class="hour-btn" data-hour="11" onclick="selectChartHour(11)">11</button>
+          <button class="hour-btn" data-hour="12" onclick="selectChartHour(12)">12</button>
+          <button class="hour-btn" data-hour="13" onclick="selectChartHour(13)">13</button>
+          <button class="hour-btn" data-hour="14" onclick="selectChartHour(14)">14</button>
+          <button class="hour-btn" data-hour="15" onclick="selectChartHour(15)">15</button>
+          <button class="hour-btn" data-hour="16" onclick="selectChartHour(16)">16</button>
+          <button class="hour-btn" data-hour="17" onclick="selectChartHour(17)">17</button>
+          <button class="hour-btn" data-hour="18" onclick="selectChartHour(18)">18</button>
+          <button class="hour-btn" data-hour="19" onclick="selectChartHour(19)">19</button>
+          <button class="hour-btn" data-hour="20" onclick="selectChartHour(20)">20</button>
+          <button class="hour-btn" data-hour="21" onclick="selectChartHour(21)">21</button>
+          <button class="hour-btn" data-hour="22" onclick="selectChartHour(22)">22</button>
+          <button class="hour-btn" data-hour="23" onclick="selectChartHour(23)">23</button>
+        </div>
         <canvas id="stepsChart" height="80"></canvas>
+      </div>
+
+      <!-- 月趋势对比 -->
+      <div id="monthCompare" style="margin-bottom: 20px; display: none;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 16px; color: white;">
+            <div style="font-size: 13px; opacity: 0.9; margin-bottom: 8px;">本月</div>
+            <div id="currentMonthSteps" style="font-size: 32px; font-weight: 700;">-</div>
+            <div id="currentMonthLabel" style="font-size: 12px; opacity: 0.8; margin-top: 4px;">-</div>
+          </div>
+          <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 16px; color: white;">
+            <div style="font-size: 13px; opacity: 0.9; margin-bottom: 8px;">上月</div>
+            <div id="prevMonthSteps" style="font-size: 32px; font-weight: 700;">-</div>
+            <div id="prevMonthLabel" style="font-size: 12px; opacity: 0.8; margin-top: 4px;">-</div>
+          </div>
+          <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 16px; color: white;">
+            <div style="font-size: 13px; opacity: 0.9; margin-bottom: 8px;">变化</div>
+            <div id="monthChange" style="font-size: 32px; font-weight: 700;">-</div>
+            <div id="monthChangeLabel" style="font-size: 12px; opacity: 0.8; margin-top: 4px;">vs 上月</div>
+          </div>
+        </div>
       </div>
 
       <div id="statsContent"></div>
@@ -620,13 +808,23 @@
           <input type="text" id="recordsFilterUserId" placeholder="输入用户 ID" onchange="currentPage = 1; loadRecords()">
         </div>
       </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" style="width: 18px; height: 18px; cursor: pointer;">
+          <label for="selectAll" style="cursor: pointer; color: var(--text-secondary); font-size: 14px;">全选</label>
+          <button class="btn btn-danger btn-sm" onclick="batchDelete()" style="margin-left: 12px;" id="batchDeleteBtn" disabled>批量删除</button>
+          <span id="selectedCount" style="color: var(--text-secondary); font-size: 13px; margin-left: 8px;"></span>
+        </div>
+      </div>
       <div class="table-container">
         <table>
           <thead>
             <tr>
-              <th onclick="sortTable('id')">ID <span class="sort-icon">↕</span></th>
+              <th style="width: 50px;"><input type="checkbox" id="selectAllHeader" onchange="toggleSelectAll()" style="width: 18px; height: 18px; cursor: pointer;"></th>
+              <th onclick="sortTable('id')" class="sorted">ID <span class="sort-icon">↓</span></th>
               <th onclick="sortTable('user_id')">用户 ID <span class="sort-icon">↕</span></th>
               <th onclick="sortTable('steps')">步数 <span class="sort-icon">↕</span></th>
+              <th onclick="sortTable('hour')">时间段 <span class="sort-icon">↕</span></th>
               <th onclick="sortTable('record_time')">记录时间 <span class="sort-icon">↕</span></th>
               <th>操作</th>
             </tr>
@@ -656,6 +854,29 @@
           <input type="number" id="editSteps" placeholder="输入步数">
         </div>
         <div class="form-group">
+          <label>时间段</label>
+          <select id="editHourSelect">
+            <option value="">选择小时（可选）</option>
+            <option value="7">07:00 - 08:00</option>
+            <option value="8">08:00 - 09:00</option>
+            <option value="9">09:00 - 10:00</option>
+            <option value="10">10:00 - 11:00</option>
+            <option value="11">11:00 - 12:00</option>
+            <option value="12">12:00 - 13:00</option>
+            <option value="13">13:00 - 14:00</option>
+            <option value="14">14:00 - 15:00</option>
+            <option value="15">15:00 - 16:00</option>
+            <option value="16">16:00 - 17:00</option>
+            <option value="17">17:00 - 18:00</option>
+            <option value="18">18:00 - 19:00</option>
+            <option value="19">19:00 - 20:00</option>
+            <option value="20">20:00 - 21:00</option>
+            <option value="21">21:00 - 22:00</option>
+            <option value="22">22:00 - 23:00</option>
+            <option value="23">23:00 - 24:00</option>
+          </select>
+        </div>
+        <div class="form-group">
           <label>记录时间</label>
           <input type="datetime-local" id="editRecordTime">
         </div>
@@ -671,7 +892,7 @@
     let currentTab = 'daily';
     let currentPage = 1;
     const pageSize = 10;
-    let sortField = 'record_time';
+    let sortField = 'id';
     let sortDirection = 'desc';
     let allRecords = [];
     let stepsChart = null;
@@ -679,12 +900,14 @@
     let statsPageSize = 10;
     let statsCurrentPage = 1;
     let totalRecords = 0;
+    let chartHourFilter = null;
 
     // 初始化日期为今天
     const now = new Date();
     const today = now.toISOString().slice(0, 10);
     const currentMonth = now.toISOString().slice(0, 7);
-    document.getElementById('recordTime').value = now.toISOString().slice(0, 16);
+    // 默认时间为当天 23:59
+    document.getElementById('recordTime').value = `${today}T23:59`;
     document.getElementById('filterMonth').value = currentMonth;
     document.getElementById('filterYear').value = now.getFullYear();
 
@@ -696,6 +919,9 @@
 
       document.getElementById('monthFilter').style.display = (tab === 'daily') ? 'block' : 'none';
       document.getElementById('yearFilter').style.display = (tab === 'monthly') ? 'block' : 'none';
+      
+      // 月视图时显示趋势对比
+      document.getElementById('monthCompare').style.display = (tab === 'monthly') ? 'block' : 'none';
 
       loadStats();
     }
@@ -710,26 +936,50 @@
       return dateStr.replace(' ', 'T').substring(0, 16);
     }
 
+    function selectHour(hour) {
+      document.getElementById('hourSelect').value = hour;
+      document.querySelectorAll('.hour-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.hour == hour) {
+          btn.classList.add('active');
+        }
+      });
+    }
+
+    function selectChartHour(hour) {
+      chartHourFilter = hour === '' ? null : parseInt(hour);
+      document.querySelectorAll('#chartContainer .hour-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.hour == hour) {
+          btn.classList.add('active');
+        }
+      });
+      loadStats();
+    }
+
     function setTimePoint(hour) {
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
 
-      // 24点设为当天的23:59
-      if (hour === 24) {
+      // 23 点设为 23:59
+      if (hour === 23) {
         document.getElementById('recordTime').value = `${year}-${month}-${day}T23:59`;
+        document.getElementById('hourSelect').value = '23';
         return;
       }
 
       const hourStr = String(hour).padStart(2, '0');
       document.getElementById('recordTime').value = `${year}-${month}-${day}T${hourStr}:00`;
+      document.getElementById('hourSelect').value = hour.toString();
     }
 
     async function addStepRecord() {
       const user_id = document.getElementById('userId').value;
       const steps = document.getElementById('steps').value;
       const record_time = document.getElementById('recordTime').value;
+      const hour = document.getElementById('hourSelect').value;
 
       if (!user_id || !steps) {
         showToast('请填写用户 ID 和步数', 'error');
@@ -739,17 +989,51 @@
       const res = await fetch('/api/steps', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id, steps, record_time })
+        body: JSON.stringify({ user_id, steps, record_time, hour: hour ? parseInt(hour) : null })
       });
 
       const data = await res.json();
       if (res.ok) {
         showToast('记录添加成功！', 'success');
         document.getElementById('steps').value = '';
+        document.getElementById('hourSelect').value = '';
+        document.querySelectorAll('.hour-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector('.hour-btn[data-hour=""]').classList.add('active');
+        currentPage = 1;
+        loadRecords();
+        loadStats();
+      } else if (res.status === 409) {
+        // 重复记录
+        const date = data.date || record_time?.split('T')[0];
+        const hourText = data.hour ? `${String(data.hour).padStart(2, '0')}:00` : '该天';
+        const message = `⚠️ 发现重复记录！\n\n${date} ${hourText} 已有数据：${data.existing_id}号记录\n\n点击"确定"覆盖原有记录，点击"取消"保留原记录。`;
+        
+        showConfirmModal(message, (confirmed) => {
+          if (confirmed) {
+            updateExistingRecord(data.existing_id, user_id, steps, record_time, hour);
+          }
+        });
+      } else {
+        showToast('添加失败：' + data.error, 'error');
+      }
+    }
+
+    async function updateExistingRecord(id, user_id, steps, record_time, hour) {
+      const res = await fetch(`/api/steps/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id, steps, record_time, hour: hour ? parseInt(hour) : null })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        showToast('记录已更新', 'success');
+        document.getElementById('steps').value = '';
+        currentPage = 1;
         loadRecords();
         loadStats();
       } else {
-        showToast('添加失败：' + data.error, 'error');
+        showToast('更新失败：' + data.error, 'error');
       }
     }
 
@@ -757,13 +1041,16 @@
       const user_id = document.getElementById('filterUserId').value;
       if (!user_id) {
         document.getElementById('statsContent').innerHTML = '<div class="no-data">请输入用户 ID 查看统计</div>';
-        document.getElementById('chartContainer').style.display = 'none';
         document.getElementById('statsPagination').innerHTML = '';
         document.getElementById('strideGroup').style.display = 'none';
+        if (stepsChart) {
+          stepsChart.destroy();
+          stepsChart = null;
+        }
+        document.getElementById('stepsChart').style.display = 'none';
         return;
       }
 
-      document.getElementById('chartContainer').style.display = 'block';
       document.getElementById('strideGroup').style.display = 'block';
       statsCurrentPage = 1;
 
@@ -774,11 +1061,11 @@
       switch (currentTab) {
         case 'daily':
           const month = document.getElementById('filterMonth').value;
-          url = `/api/steps/daily?user_id=${user_id}${month ? '&month=' + month : ''}`;
+          url = `/api/steps/daily?user_id=${user_id}${month ? '&month=' + month : ''}${chartHourFilter !== null ? '&hour=' + chartHourFilter : ''}`;
           break;
         case 'monthly':
           const year = document.getElementById('filterYear').value;
-          url = `/api/steps/monthly?user_id=${user_id}${year ? '&year=' + year : ''}`;
+          url = `/api/steps/monthly?user_id=${user_id}${year ? '&year=' + year : ''}${chartHourFilter !== null ? '&hour=' + chartHourFilter : ''}`;
           break;
       }
 
@@ -787,14 +1074,75 @@
 
       if (data.length === 0) {
         document.getElementById('statsContent').innerHTML = '<div class="no-data">暂无数据</div>';
-        document.getElementById('chartContainer').style.display = 'none';
         document.getElementById('statsPagination').innerHTML = '';
+        // 清空图表
+        if (stepsChart) {
+          stepsChart.destroy();
+          stepsChart = null;
+        }
+        // 显示空状态图表容器
+        document.getElementById('stepsChart').style.display = 'none';
         return;
       }
 
       statsData = data;
+      document.getElementById('stepsChart').style.display = 'block';
       renderChart(data);
       renderStatsWithPagination(data);
+
+      // 加载月趋势对比（仅在月视图）
+      if (currentTab === 'monthly') {
+        const year = document.getElementById('filterYear').value;
+        loadMonthCompare(user_id, year);
+      }
+    }
+
+    async function loadMonthCompare(user_id, year) {
+      // 使用当前实际月份，而不是传入的年份
+      const now = new Date();
+      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      
+      try {
+        const res = await fetch(`/api/steps/month-compare?user_id=${user_id}&month=${currentMonth}`);
+        const data = await res.json();
+        console.log('月趋势对比数据:', data);
+
+        if (!data.current || !data.previous) {
+          document.getElementById('currentMonthSteps').textContent = '-';
+          document.getElementById('prevMonthSteps').textContent = '-';
+          document.getElementById('monthChange').textContent = '-';
+          return;
+        }
+
+        document.getElementById('currentMonthSteps').textContent = (data.current.steps || 0).toLocaleString();
+        document.getElementById('currentMonthLabel').textContent = `${data.current.month} · ${data.current.distance_km || '0.00'}公里`;
+
+        document.getElementById('prevMonthSteps').textContent = (data.previous.steps || 0).toLocaleString();
+        document.getElementById('prevMonthLabel').textContent = `${data.previous.month} · ${data.previous.distance_km || '0.00'}公里`;
+
+        const changeEl = document.getElementById('monthChange');
+        const changeLabelEl = document.getElementById('monthChangeLabel');
+
+        // 如果上月数据为 0，显示 "-" 或特殊处理
+        if (data.previous.steps === 0) {
+          changeEl.textContent = '-';
+          changeLabelEl.textContent = '上月无数据';
+        } else if (data.change > 0) {
+          changeEl.textContent = `+${data.change}%`;
+          changeLabelEl.textContent = '↑ 增长 vs 上月';
+        } else if (data.change < 0) {
+          changeEl.textContent = `${data.change}%`;
+          changeLabelEl.textContent = '↓ 下降 vs 上月';
+        } else {
+          changeEl.textContent = '0%';
+          changeLabelEl.textContent = '= 持平 vs 上月';
+        }
+      } catch (err) {
+        console.error('加载月趋势对比失败:', err);
+        document.getElementById('currentMonthSteps').textContent = '-';
+        document.getElementById('prevMonthSteps').textContent = '-';
+        document.getElementById('monthChange').textContent = '-';
+      }
     }
 
     async function loadStrideSettings(user_id) {
@@ -990,15 +1338,18 @@
       records.sort((a, b) => {
         let aVal = a[sortField];
         let bVal = b[sortField];
-        
+
         if (sortField === 'steps') {
           aVal = parseInt(aVal) || 0;
           bVal = parseInt(bVal) || 0;
+        } else if (sortField === 'hour') {
+          aVal = aVal === null ? 999 : parseInt(aVal);
+          bVal = bVal === null ? 999 : parseInt(bVal);
         } else if (sortField === 'record_time') {
           aVal = new Date(aVal).getTime();
           bVal = new Date(bVal).getTime();
         }
-        
+
         if (sortDirection === 'asc') {
           return aVal > bVal ? 1 : -1;
         } else {
@@ -1008,11 +1359,14 @@
 
       let html = '';
       records.forEach(record => {
+        const hourDisplay = record.hour ? `${String(record.hour).padStart(2, '0')}:00` : '-';
         html += `
           <tr>
+            <td><input type="checkbox" class="record-checkbox" value="${record.id}" onchange="updateBatchDeleteBtn()"></td>
             <td>${record.id}</td>
             <td>${record.user_id}</td>
             <td>${parseInt(record.steps)}</td>
+            <td>${hourDisplay}</td>
             <td>${formatDateTime(record.record_time)}</td>
             <td>
               <div class="btn-group">
@@ -1068,7 +1422,73 @@
       const totalPages = Math.ceil(totalRecords / pageSize);
       if (page < 1 || page > totalPages) return;
       currentPage = page;
+      // 翻页时取消选中
+      document.querySelectorAll('.record-checkbox').forEach(cb => cb.checked = false);
+      updateBatchDeleteBtn();
       loadRecords();
+    }
+
+    // 批量删除功能
+    function toggleSelectAll() {
+      const headerCheckbox = document.getElementById('selectAllHeader');
+      const footerCheckbox = document.getElementById('selectAll');
+      const checkboxes = document.querySelectorAll('.record-checkbox');
+      
+      // 同步两个全选按钮状态
+      if (headerCheckbox.checked) {
+        footerCheckbox.checked = true;
+        checkboxes.forEach(cb => cb.checked = true);
+      } else {
+        footerCheckbox.checked = false;
+        checkboxes.forEach(cb => cb.checked = false);
+      }
+      updateBatchDeleteBtn();
+    }
+
+    function updateBatchDeleteBtn() {
+      const checkboxes = document.querySelectorAll('.record-checkbox:checked');
+      const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+      const selectedCount = document.getElementById('selectedCount');
+      
+      batchDeleteBtn.disabled = checkboxes.length === 0;
+      selectedCount.textContent = checkboxes.length > 0 ? `已选 ${checkboxes.length} 条` : '';
+      
+      // 同步全选按钮状态
+      const headerCheckbox = document.getElementById('selectAllHeader');
+      const footerCheckbox = document.getElementById('selectAll');
+      const allCheckboxes = document.querySelectorAll('.record-checkbox');
+      const allChecked = allCheckboxes.length > 0 && allCheckboxes.length === checkboxes.length;
+      
+      headerCheckbox.checked = allChecked;
+      footerCheckbox.checked = allChecked;
+    }
+
+    async function batchDelete() {
+      const checkboxes = document.querySelectorAll('.record-checkbox:checked');
+      const ids = Array.from(checkboxes).map(cb => cb.value);
+      
+      if (ids.length === 0) {
+        showToast('请选择要删除的记录', 'warning');
+        return;
+      }
+
+      if (!confirm(`确定要删除选中的 ${ids.length} 条记录吗？`)) return;
+
+      const res = await fetch('/api/steps/batch-delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: ids.map(id => parseInt(id)) })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`成功删除 ${ids.length} 条记录`, 'success');
+        currentPage = 1;
+        loadRecords();
+        loadStats();
+      } else {
+        showToast('删除失败：' + data.error, 'error');
+      }
     }
 
     async function deleteRecord(id) {
@@ -1094,8 +1514,9 @@
       document.getElementById('editId').value = record.id;
       document.getElementById('editUserId').value = record.user_id;
       document.getElementById('editSteps').value = record.steps;
+      document.getElementById('editHourSelect').value = record.hour || '';
       document.getElementById('editRecordTime').value = parseDateTime(record.record_time);
-      
+
       document.getElementById('editModal').classList.add('show');
     }
 
@@ -1103,11 +1524,34 @@
       document.getElementById('editModal').classList.remove('show');
     }
 
+    // 确认弹窗
+    let confirmCallback = null;
+
+    function showConfirmModal(message, callback) {
+      document.getElementById('confirmMessage').textContent = message;
+      confirmCallback = callback;
+      document.getElementById('confirmModal').classList.add('show');
+    }
+
+    function closeConfirmModal(confirmed) {
+      document.getElementById('confirmModal').classList.remove('show');
+      if (confirmCallback) {
+        confirmCallback(confirmed);
+        confirmCallback = null;
+      }
+    }
+
+    // 点击遮罩关闭弹窗
+    document.getElementById('confirmModal').addEventListener('click', function(e) {
+      if (e.target === this) closeConfirmModal(false);
+    });
+
     async function saveEdit() {
       const id = document.getElementById('editId').value;
       const user_id = document.getElementById('editUserId').value;
       const steps = document.getElementById('editSteps').value;
       const record_time = document.getElementById('editRecordTime').value;
+      const hour = document.getElementById('editHourSelect').value;
 
       if (!user_id || !steps) {
         showToast('请填写用户 ID 和步数', 'error');
@@ -1117,7 +1561,7 @@
       const res = await fetch(`/api/steps/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id, steps, record_time })
+        body: JSON.stringify({ user_id, steps, record_time, hour: hour ? parseInt(hour) : null })
       });
 
       const data = await res.json();
@@ -1158,5 +1602,20 @@
     loadRecords();
     loadStats();
   </script>
+  <!-- 确认弹窗 -->
+  <div class="confirm-modal-overlay" id="confirmModal">
+    <div class="confirm-modal">
+      <div class="confirm-modal-title">
+        <span>⚠️</span>
+        <span>重复记录提示</span>
+      </div>
+      <div class="confirm-modal-message" id="confirmMessage"></div>
+      <div class="confirm-modal-actions">
+        <button class="btn btn-warning" onclick="closeConfirmModal(false)">取消</button>
+        <button class="btn" onclick="closeConfirmModal(true)">确定</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

@@ -13,41 +13,69 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // API: 添加步数记录
 app.post('/api/steps', (req, res) => {
-  const { user_id, steps, record_time } = req.body;
-  
+  const { user_id, steps, record_time, hour } = req.body;
+
   if (!user_id || steps === undefined) {
     return res.status(400).json({ error: '缺少必要参数：user_id 和 steps' });
   }
 
   const time = record_time || new Date().toISOString();
   const db = getDb();
+
+  // 检查重复：同一用户、同一天、同一时间段
+  const date = time.split('T')[0] || time.split(' ')[0];
+  let checkSql = 'SELECT id FROM step_records WHERE user_id = ? AND strftime("%Y-%m-%d", record_time) = ?';
+  let checkParams = [user_id, date];
   
-  db.run(
-    'INSERT INTO step_records (user_id, steps, record_time) VALUES (?, ?, ?)',
-    [user_id, steps, time],
-    function(err) {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      res.json({ id: this.lastID, user_id, steps, record_time: time });
+  if (hour !== null && hour !== undefined && hour !== '') {
+    checkSql += ' AND hour = ?';
+    checkParams.push(parseInt(hour));
+  }
+
+  db.get(checkSql, checkParams, (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
     }
-  );
+    
+    if (row) {
+      return res.status(409).json({ 
+        error: '重复记录',
+        message: hour !== null ? 
+          `该用户 ${date} 的 ${String(hour).padStart(2, '0')}:00 时间段已有记录` : 
+          `该用户 ${date} 已有记录，是否覆盖？`,
+        existing_id: row.id,
+        date: date,
+        hour: hour
+      });
+    }
+
+    db.run(
+      'INSERT INTO step_records (user_id, steps, hour, record_time) VALUES (?, ?, ?, ?)',
+      [user_id, steps, hour || null, time],
+      function(err) {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        res.json({ id: this.lastID, user_id, steps, hour, record_time: time });
+      }
+    );
+  });
 });
 
 // API: 更新步数记录
 app.put('/api/steps/:id', (req, res) => {
   const { id } = req.params;
-  const { user_id, steps, record_time } = req.body;
-  
+  const { user_id, steps, record_time, hour } = req.body;
+
   if (!user_id || steps === undefined) {
     return res.status(400).json({ error: '缺少必要参数：user_id 和 steps' });
   }
 
   const db = getDb();
-  
+
   db.run(
-    'UPDATE step_records SET user_id = ?, steps = ?, record_time = ? WHERE id = ?',
-    [user_id, steps, record_time, id],
+    'UPDATE step_records SET user_id = ?, steps = ?, hour = ?, record_time = ? WHERE id = ?',
+    [user_id, steps, hour || null, record_time, id],
     function(err) {
       if (err) {
         return res.status(500).json({ error: err.message });
@@ -55,14 +83,14 @@ app.put('/api/steps/:id', (req, res) => {
       if (this.changes === 0) {
         return res.status(404).json({ error: '记录不存在' });
       }
-      res.json({ success: true, id: parseInt(id), user_id, steps, record_time });
+      res.json({ success: true, id: parseInt(id), user_id, steps, hour, record_time });
     }
   );
 });
 
 // API: 获取每天步数
 app.get('/api/steps/daily', (req, res) => {
-  const { user_id, month } = req.query;
+  const { user_id, month, hour } = req.query;
 
   if (!user_id) {
     return res.status(400).json({ error: '缺少 user_id 参数' });
@@ -92,16 +120,25 @@ app.get('/api/steps/daily', (req, res) => {
     }
     const strideLength = setting ? setting.stride_length : 0.7;
 
+    // 构建 SQL，支持按小时筛选
+    let whereClause = 'user_id = ? AND record_time BETWEEN ? AND ?';
+    let params = [user_id, startDate, endDate];
+    
+    if (hour !== undefined && hour !== null && hour !== '') {
+      whereClause += ' AND hour = ?';
+      params.push(parseInt(hour));
+    }
+
     db.all(`
       SELECT
         strftime('%Y-%m-%d', record_time) as date,
-        SUM(steps) as total_steps,
+        MAX(steps) as total_steps,
         COUNT(*) as record_count
       FROM step_records
-      WHERE user_id = ? AND record_time BETWEEN ? AND ?
+      WHERE ${whereClause}
       GROUP BY strftime('%Y-%m-%d', record_time)
       ORDER BY date DESC
-    `, [user_id, startDate, endDate], (err, rows) => {
+    `, params, (err, rows) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
@@ -117,7 +154,7 @@ app.get('/api/steps/daily', (req, res) => {
 
 // API: 获取每月步数
 app.get('/api/steps/monthly', (req, res) => {
-  const { user_id, year } = req.query;
+  const { user_id, year, hour } = req.query;
 
   if (!user_id) {
     return res.status(400).json({ error: '缺少 user_id 参数' });
@@ -142,16 +179,32 @@ app.get('/api/steps/monthly', (req, res) => {
     }
     const strideLength = setting ? setting.stride_length : 0.7;
 
+    // 构建 SQL，支持按小时筛选
+    // 先按天分组取每天最大值，再按月分组取每月最大值
+    let hourCondition = '';
+    let params = [user_id, startDate, endDate];
+    
+    if (hour !== undefined && hour !== null && hour !== '') {
+      hourCondition = 'AND hour = ?';
+      params = [user_id, startDate, endDate, parseInt(hour)];
+    }
+
     db.all(`
       SELECT
-        strftime('%Y-%m', record_time) as month,
-        SUM(steps) as total_steps,
+        strftime('%Y-%m', date) as month,
+        SUM(daily_max_steps) as total_steps,
         COUNT(*) as record_count
-      FROM step_records
-      WHERE user_id = ? AND record_time BETWEEN ? AND ?
-      GROUP BY strftime('%Y-%m', record_time)
+      FROM (
+        SELECT
+          strftime('%Y-%m-%d', record_time) as date,
+          MAX(steps) as daily_max_steps
+        FROM step_records
+        WHERE user_id = ? AND record_time BETWEEN ? AND ? ${hourCondition}
+        GROUP BY strftime('%Y-%m-%d', record_time)
+      )
+      GROUP BY strftime('%Y-%m', date)
       ORDER BY month DESC
-    `, [user_id, startDate, endDate], (err, rows) => {
+    `, params, (err, rows) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
@@ -165,6 +218,98 @@ app.get('/api/steps/monthly', (req, res) => {
   });
 });
 
+// API: 获取月趋势对比（本月 vs 上月）
+app.get('/api/steps/month-compare', (req, res) => {
+  const { user_id, month } = req.query;
+
+  if (!user_id) {
+    return res.status(400).json({ error: '缺少 user_id 参数' });
+  }
+
+  const now = new Date();
+  let targetMonth, targetYear;
+
+  if (month) {
+    [targetYear, targetMonth] = month.split('-').map(Number);
+  } else {
+    targetYear = now.getFullYear();
+    targetMonth = now.getMonth() + 1;
+  }
+
+  // 计算上月
+  let prevYear = targetYear;
+  let prevMonth = targetMonth - 1;
+  if (prevMonth === 0) {
+    prevMonth = 12;
+    prevYear = targetYear - 1;
+  }
+
+  // 计算当月和上月的起止日期（正确处理每月天数）
+  const currentMonthStart = `${targetYear}-${String(targetMonth).padStart(2, '0')}-01 00:00:00`;
+  const currentMonthLastDay = new Date(targetYear, targetMonth, 0).getDate();
+  const currentMonthEnd = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${currentMonthLastDay} 23:59:59`;
+  
+  const prevMonthStart = `${prevYear}-${String(prevMonth).padStart(2, '0')}-01 00:00:00`;
+  const prevMonthLastDay = new Date(prevYear, prevMonth, 0).getDate();
+  const prevMonthEnd = `${prevYear}-${String(prevMonth).padStart(2, '0')}-${prevMonthLastDay} 23:59:59`;
+
+  const db = getDb();
+
+  db.get('SELECT stride_length FROM user_settings WHERE user_id = ?', [user_id], (err, setting) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    const strideLength = setting ? setting.stride_length : 0.7;
+
+    // 先按天分组取每天最大值，再求和（每月总步数 = 该月每天步数的总和）
+    db.all(`
+      SELECT SUM(daily_max_steps) as total_steps
+      FROM (
+        SELECT MAX(steps) as daily_max_steps
+        FROM step_records
+        WHERE user_id = ? AND record_time BETWEEN ? AND ?
+        GROUP BY strftime('%Y-%m-%d', record_time)
+      )
+    `, [user_id, prevMonthStart, prevMonthEnd], (err, prevResult) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      db.all(`
+        SELECT SUM(daily_max_steps) as total_steps
+        FROM (
+          SELECT MAX(steps) as daily_max_steps
+          FROM step_records
+          WHERE user_id = ? AND record_time BETWEEN ? AND ?
+          GROUP BY strftime('%Y-%m-%d', record_time)
+        )
+      `, [user_id, currentMonthStart, currentMonthEnd], (err, currResult) => {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+
+        const prevSteps = parseInt(prevResult[0]?.total_steps) || 0;
+        const currSteps = parseInt(currResult[0]?.total_steps) || 0;
+        const change = prevSteps > 0 ? ((currSteps - prevSteps) / prevSteps * 100).toFixed(1) : 0;
+
+        res.json({
+          current: {
+            month: `${targetYear}-${String(targetMonth).padStart(2, '0')}`,
+            steps: currSteps,
+            distance_km: ((currSteps * strideLength) / 1000).toFixed(2)
+          },
+          previous: {
+            month: `${prevYear}-${String(prevMonth).padStart(2, '0')}`,
+            steps: prevSteps,
+            distance_km: ((prevSteps * strideLength) / 1000).toFixed(2)
+          },
+          change: parseFloat(change)
+        });
+      });
+    });
+  });
+});
+
 // API: 获取所有记录（支持分页）
 app.get('/api/steps', (req, res) => {
   const { user_id, limit = 20, offset = 0 } = req.query;
@@ -173,12 +318,12 @@ app.get('/api/steps', (req, res) => {
   let sql, params, countSql, countParams;
 
   if (user_id) {
-    sql = 'SELECT * FROM step_records WHERE user_id = ? ORDER BY record_time DESC LIMIT ? OFFSET ?';
+    sql = 'SELECT * FROM step_records WHERE user_id = ? ORDER BY id DESC LIMIT ? OFFSET ?';
     params = [user_id, parseInt(limit), parseInt(offset)];
     countSql = 'SELECT COUNT(*) as total FROM step_records WHERE user_id = ?';
     countParams = [user_id];
   } else {
-    sql = 'SELECT * FROM step_records ORDER BY record_time DESC LIMIT ? OFFSET ?';
+    sql = 'SELECT * FROM step_records ORDER BY id DESC LIMIT ? OFFSET ?';
     params = [parseInt(limit), parseInt(offset)];
     countSql = 'SELECT COUNT(*) as total FROM step_records';
     countParams = [];
@@ -216,6 +361,25 @@ app.delete('/api/steps/:id', (req, res) => {
       return res.status(404).json({ error: '记录不存在' });
     }
     res.json({ success: true, message: '记录已删除' });
+  });
+});
+
+// API: 批量删除记录
+app.delete('/api/steps/batch-delete', (req, res) => {
+  const { ids } = req.body;
+
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ error: '缺少有效的 IDs 参数' });
+  }
+
+  const db = getDb();
+  const placeholders = ids.map(() => '?').join(',');
+
+  db.run(`DELETE FROM step_records WHERE id IN (${placeholders})`, ids, function(err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ success: true, message: `成功删除 ${this.changes} 条记录`, deleted: this.changes });
   });
 });
 
