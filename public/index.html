@@ -707,6 +707,7 @@
         <button class="btn btn-sm" onclick="setTimePoint(12)">12:00</button>
         <button class="btn btn-sm" onclick="setTimePoint(18)">18:00</button>
         <button class="btn btn-sm" onclick="setTimePoint(23)">23:00</button>
+        <button class="btn btn-sm" onclick="setTimePoint(23, 59, true)">昨天 23:59</button>
       </div>
       <button class="btn" onclick="addStepRecord()" style="margin-top: 16px;">添加记录</button>
     </div>
@@ -957,11 +958,30 @@
       loadStats();
     }
 
-    function setTimePoint(hour) {
-      const now = new Date();
+    function setTimePoint(hour, minute = 0, isYesterday = false) {
+      let now = new Date();
+      
+      // 如果是昨天，日期减 1 天
+      if (isYesterday) {
+        now.setDate(now.getDate() - 1);
+      }
+      
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
+      const hourStr = String(hour).padStart(2, '0');
+      const minuteStr = String(minute).padStart(2, '0');
+
+      // 昨天 23:59 - 不设置小时字段，表示前一天的最终累计步数
+      if (isYesterday) {
+        document.getElementById('recordTime').value = `${year}-${month}-${day}T23:59`;
+        document.getElementById('hourSelect').value = ''; // 留空，不设置小时
+        // 清除所有按钮的 active 状态
+        document.querySelectorAll('.hour-btn').forEach(btn => btn.classList.remove('active'));
+        // 激活"全"按钮
+        document.querySelector('.hour-btn[data-hour=""]').classList.add('active');
+        return;
+      }
 
       // 23 点设为 23:59
       if (hour === 23) {
@@ -970,8 +990,7 @@
         return;
       }
 
-      const hourStr = String(hour).padStart(2, '0');
-      document.getElementById('recordTime').value = `${year}-${month}-${day}T${hourStr}:00`;
+      document.getElementById('recordTime').value = `${year}-${month}-${day}T${hourStr}:${minuteStr}`;
       document.getElementById('hourSelect').value = hour.toString();
     }
 
@@ -1071,6 +1090,9 @@
 
       const res = await fetch(url);
       const data = await res.json();
+
+      console.log('统计数据:', data);
+      console.log('请求 URL:', url);
 
       if (data.length === 0) {
         document.getElementById('statsContent').innerHTML = '<div class="no-data">暂无数据</div>';

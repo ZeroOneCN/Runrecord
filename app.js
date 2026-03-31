@@ -26,23 +26,27 @@ app.post('/api/steps', (req, res) => {
   const date = time.split('T')[0] || time.split(' ')[0];
   let checkSql = 'SELECT id FROM step_records WHERE user_id = ? AND strftime("%Y-%m-%d", record_time) = ?';
   let checkParams = [user_id, date];
-  
+
+  // hour 为空字符串时也要检查，确保同一天只能有一条"无小时"记录
   if (hour !== null && hour !== undefined && hour !== '') {
     checkSql += ' AND hour = ?';
     checkParams.push(parseInt(hour));
+  } else {
+    // hour 为空时，检查该天是否已有 hour 为空的记录
+    checkSql += ' AND hour IS NULL';
   }
 
   db.get(checkSql, checkParams, (err, row) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    
+
     if (row) {
-      return res.status(409).json({ 
+      return res.status(409).json({
         error: '重复记录',
-        message: hour !== null ? 
-          `该用户 ${date} 的 ${String(hour).padStart(2, '0')}:00 时间段已有记录` : 
-          `该用户 ${date} 已有记录，是否覆盖？`,
+        message: (hour !== null && hour !== undefined && hour !== '') ?
+          `该用户 ${date} 的 ${String(hour).padStart(2, '0')}:00 时间段已有记录` :
+          `该用户 ${date} 已有全天累计记录，是否覆盖？`,
         existing_id: row.id,
         date: date,
         hour: hour
@@ -98,17 +102,20 @@ app.get('/api/steps/daily', (req, res) => {
 
   let startDate, endDate;
   if (month) {
-    startDate = `${month}-01 00:00:00`;
+    startDate = `${month}-01T00:00:00`;
     const [year, m] = month.split('-');
-    const lastDay = new Date(year, parseInt(m), 0).getDate();
-    endDate = `${month}-${String(lastDay).padStart(2, '0')} 23:59:59`;
+    // 获取当月最后一天：当月的第 0 天 = 上月最后一天，所以月份 +1 再取第 0 天
+    const lastDay = new Date(parseInt(year), parseInt(m) - 1 + 1, 0).getDate();
+    endDate = `${month}-${String(lastDay).padStart(2, '0')}T23:59:59`;
   } else {
     const now = new Date();
     const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    startDate = `${year}-${month}-01 00:00:00`;
-    const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
-    endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')} 23:59:59`;
+    const monthNum = now.getMonth() + 1;
+    const month = String(monthNum).padStart(2, '0');
+    startDate = `${year}-${month}-01T00:00:00`;
+    // 获取当月最后一天：下个月第 0 天 = 本月最后一天
+    const lastDay = new Date(year, monthNum + 1, 0).getDate();
+    endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}T23:59:59`;
   }
 
   const db = getDb();
@@ -119,6 +126,9 @@ app.get('/api/steps/daily', (req, res) => {
       return res.status(500).json({ error: err.message });
     }
     const strideLength = setting ? setting.stride_length : 0.7;
+    console.log(`[每日统计] user_id: ${user_id}`);
+    console.log(`[每日统计] startDate: "${startDate}"`);
+    console.log(`[每日统计] endDate: "${endDate}"`);
 
     // 构建 SQL，支持按小时筛选
     let whereClause = 'user_id = ? AND record_time BETWEEN ? AND ?';
@@ -162,12 +172,12 @@ app.get('/api/steps/monthly', (req, res) => {
 
   let startDate, endDate;
   if (year) {
-    startDate = `${year}-01-01 00:00:00`;
-    endDate = `${year}-12-31 23:59:59`;
+    startDate = `${year}-01-01T00:00:00`;
+    endDate = `${year}-12-31T23:59:59`;
   } else {
     const now = new Date();
-    startDate = `${now.getFullYear()}-01-01 00:00:00`;
-    endDate = `${now.getFullYear()}-12-31 23:59:59`;
+    startDate = `${now.getFullYear()}-01-01T00:00:00`;
+    endDate = `${now.getFullYear()}-12-31T23:59:59`;
   }
 
   const db = getDb();
@@ -245,13 +255,13 @@ app.get('/api/steps/month-compare', (req, res) => {
   }
 
   // 计算当月和上月的起止日期（正确处理每月天数）
-  const currentMonthStart = `${targetYear}-${String(targetMonth).padStart(2, '0')}-01 00:00:00`;
+  const currentMonthStart = `${targetYear}-${String(targetMonth).padStart(2, '0')}-01T00:00:00`;
   const currentMonthLastDay = new Date(targetYear, targetMonth, 0).getDate();
-  const currentMonthEnd = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${currentMonthLastDay} 23:59:59`;
-  
-  const prevMonthStart = `${prevYear}-${String(prevMonth).padStart(2, '0')}-01 00:00:00`;
+  const currentMonthEnd = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${currentMonthLastDay}T23:59:59`;
+
+  const prevMonthStart = `${prevYear}-${String(prevMonth).padStart(2, '0')}-01T00:00:00`;
   const prevMonthLastDay = new Date(prevYear, prevMonth, 0).getDate();
-  const prevMonthEnd = `${prevYear}-${String(prevMonth).padStart(2, '0')}-${prevMonthLastDay} 23:59:59`;
+  const prevMonthEnd = `${prevYear}-${String(prevMonth).padStart(2, '0')}-${prevMonthLastDay}T23:59:59`;
 
   const db = getDb();
 
